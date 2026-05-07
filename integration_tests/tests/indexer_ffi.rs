@@ -218,7 +218,7 @@ fn indexer_ffi_state_consistency() -> Result<()> {
 
     assert!(acc1_ind_state_ffi.error.is_ok());
 
-    let acc1_ind_state_pre = unsafe { &*acc1_ind_state_ffi.value }.clone();
+    let acc1_ind_state_pre = unsafe { &*acc1_ind_state_ffi.value };
     let acc1_ind_state: indexer_service_protocol::Account = acc1_ind_state_pre.into();
 
     let acc2_ind_state_ffi =
@@ -226,7 +226,7 @@ fn indexer_ffi_state_consistency() -> Result<()> {
 
     assert!(acc2_ind_state_ffi.error.is_ok());
 
-    let acc2_ind_state_pre = unsafe { &*acc2_ind_state_ffi.value }.clone();
+    let acc2_ind_state_pre = unsafe { &*acc2_ind_state_ffi.value };
     let acc2_ind_state: indexer_service_protocol::Account = acc2_ind_state_pre.into();
 
     info!("Checking correct state transition");
@@ -320,7 +320,7 @@ fn indexer_ffi_state_consistency_with_labels() -> Result<()> {
 
     assert!(acc1_ind_state_ffi.error.is_ok());
 
-    let acc1_ind_state_pre = unsafe { &*acc1_ind_state_ffi.value }.clone();
+    let acc1_ind_state_pre = unsafe { &*acc1_ind_state_ffi.value };
     let acc1_ind_state: indexer_service_protocol::Account = acc1_ind_state_pre.into();
 
     let acc1_seq_state =

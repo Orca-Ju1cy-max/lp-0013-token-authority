@@ -17,37 +17,26 @@ pub struct FfiBlock {
 
 impl From<Block> for FfiBlock {
     fn from(value: Block) -> Self {
+        let Block {
+            header,
+            body,
+            bedrock_status,
+            bedrock_parent_id,
+        } = value;
+
         Self {
-            header: value.header.into(),
-            body: value
-                .body
+            header: header.into(),
+            body: body
                 .transactions
                 .into_iter()
                 .map(Into::into)
                 .collect::<Vec<_>>()
                 .into(),
-            bedrock_status: value.bedrock_status.into(),
-            bedrock_parent_id: value.bedrock_parent_id.into(),
+            bedrock_status: bedrock_status.into(),
+            bedrock_parent_id: bedrock_parent_id.into(),
         }
     }
 }
-
-// impl From<Box<FfiBlock>> for Block {
-//     fn from(value: Box<FfiBlock>) -> Self {
-//         Self {
-//             header: BlockHeader {
-//                 block_id: value.header.block_id,
-//                 prev_block_hash: HashType(value.header.prev_block_hash.data),
-//                 hash: HashType(value.header.hash.data),
-//                 timestamp: value.header.timestamp,
-//                 signature: Signature(value.header.signature.data),
-//             },
-//             body: (),
-//             bedrock_status: value.bedrock_status.into(),
-//             bedrock_parent_id: MantleMsgId(value.bedrock_parent_id.data),
-//         }
-//     }
-// }
 
 pub type FfiBlockOpt = FfiOption<FfiBlock>;
 
@@ -62,12 +51,20 @@ pub struct FfiBlockHeader {
 
 impl From<BlockHeader> for FfiBlockHeader {
     fn from(value: BlockHeader) -> Self {
+        let BlockHeader {
+            block_id,
+            prev_block_hash,
+            hash,
+            timestamp,
+            signature,
+        } = value;
+
         Self {
-            block_id: value.block_id,
-            prev_block_hash: value.prev_block_hash.into(),
-            hash: value.hash.into(),
-            timestamp: value.timestamp,
-            signature: value.signature.into(),
+            block_id,
+            prev_block_hash: prev_block_hash.into(),
+            hash: hash.into(),
+            timestamp,
+            signature: signature.into(),
         }
     }
 }

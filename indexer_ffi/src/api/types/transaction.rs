@@ -24,11 +24,16 @@ pub struct FfiPublicTransactionBody {
 
 impl From<PublicTransaction> for FfiPublicTransactionBody {
     fn from(value: PublicTransaction) -> Self {
+        let PublicTransaction {
+            hash,
+            message,
+            witness_set,
+        } = value;
+
         Self {
-            hash: value.hash.into(),
-            message: value.message.into(),
-            witness_set: value
-                .witness_set
+            hash: hash.into(),
+            message: message.into(),
+            witness_set: witness_set
                 .signatures_and_public_keys
                 .into_iter()
                 .map(Into::into)
@@ -88,21 +93,26 @@ pub struct FfiPublicMessage {
 
 impl From<PublicMessage> for FfiPublicMessage {
     fn from(value: PublicMessage) -> Self {
+        let PublicMessage {
+            program_id,
+            account_ids,
+            nonces,
+            instruction_data,
+        } = value;
+
         Self {
-            program_id: value.program_id.into(),
-            account_ids: value
-                .account_ids
+            program_id: program_id.into(),
+            account_ids: account_ids
                 .into_iter()
                 .map(Into::into)
                 .collect::<Vec<_>>()
                 .into(),
-            nonces: value
-                .nonces
+            nonces: nonces
                 .into_iter()
                 .map(Into::into)
                 .collect::<Vec<_>>()
                 .into(),
-            instruction_data: value.instruction_data.into(),
+            instruction_data: instruction_data.into(),
         }
     }
 }
@@ -117,18 +127,22 @@ pub struct FfiPrivateTransactionBody {
 
 impl From<PrivacyPreservingTransaction> for FfiPrivateTransactionBody {
     fn from(value: PrivacyPreservingTransaction) -> Self {
+        let PrivacyPreservingTransaction {
+            hash,
+            message,
+            witness_set,
+        } = value;
+
         Self {
-            hash: value.hash.into(),
-            message: value.message.into(),
-            witness_set: value
-                .witness_set
+            hash: hash.into(),
+            message: message.into(),
+            witness_set: witness_set
                 .signatures_and_public_keys
                 .into_iter()
                 .map(Into::into)
                 .collect::<Vec<_>>()
                 .into(),
-            proof: value
-                .witness_set
+            proof: witness_set
                 .proof
                 .expect("Private execution: proof must be present")
                 .0
@@ -229,21 +243,29 @@ pub struct FfiPrivacyPreservingMessage {
 
 impl From<PrivacyPreservingMessage> for FfiPrivacyPreservingMessage {
     fn from(value: PrivacyPreservingMessage) -> Self {
+        let PrivacyPreservingMessage {
+            public_account_ids,
+            nonces,
+            public_post_states,
+            encrypted_private_post_states,
+            new_commitments,
+            new_nullifiers,
+            block_validity_window,
+            timestamp_validity_window,
+        } = value;
+
         Self {
-            public_account_ids: value
-                .public_account_ids
+            public_account_ids: public_account_ids
                 .into_iter()
                 .map(Into::into)
                 .collect::<Vec<_>>()
                 .into(),
-            nonces: value
-                .nonces
+            nonces: nonces
                 .into_iter()
                 .map(Into::into)
                 .collect::<Vec<_>>()
                 .into(),
-            public_post_states: value
-                .public_post_states
+            public_post_states: public_post_states
                 .into_iter()
                 .map(|acc_ind| -> nssa::Account {
                     acc_ind.try_into().expect("Source is in blocks, must fit")
@@ -251,26 +273,23 @@ impl From<PrivacyPreservingMessage> for FfiPrivacyPreservingMessage {
                 .map(Into::into)
                 .collect::<Vec<_>>()
                 .into(),
-            encrypted_private_post_states: value
-                .encrypted_private_post_states
+            encrypted_private_post_states: encrypted_private_post_states
                 .into_iter()
                 .map(Into::into)
                 .collect::<Vec<_>>()
                 .into(),
-            new_commitments: value
-                .new_commitments
+            new_commitments: new_commitments
                 .into_iter()
                 .map(|comm| FfiBytes32 { data: comm.0 })
                 .collect::<Vec<_>>()
                 .into(),
-            new_nullifiers: value
-                .new_nullifiers
+            new_nullifiers: new_nullifiers
                 .into_iter()
                 .map(Into::into)
                 .collect::<Vec<_>>()
                 .into(),
-            block_validity_window: cast_validity_window(value.block_validity_window),
-            timestamp_validity_window: cast_validity_window(value.timestamp_validity_window),
+            block_validity_window: cast_validity_window(block_validity_window),
+            timestamp_validity_window: cast_validity_window(timestamp_validity_window),
         }
     }
 }
@@ -299,10 +318,16 @@ pub struct FfiEncryptedAccountData {
 
 impl From<EncryptedAccountData> for FfiEncryptedAccountData {
     fn from(value: EncryptedAccountData) -> Self {
+        let EncryptedAccountData {
+            ciphertext,
+            epk,
+            view_tag,
+        } = value;
+
         Self {
-            ciphertext: value.ciphertext.0.into(),
-            epk: value.epk.0.into(),
-            view_tag: value.view_tag,
+            ciphertext: ciphertext.0.into(),
+            epk: epk.0.into(),
+            view_tag,
         }
     }
 }
@@ -341,9 +366,11 @@ impl From<Box<FfiProgramDeploymentTransactionBody>> for ProgramDeploymentTransac
 
 impl From<ProgramDeploymentTransaction> for FfiProgramDeploymentTransactionBody {
     fn from(value: ProgramDeploymentTransaction) -> Self {
+        let ProgramDeploymentTransaction { hash, message } = value;
+
         Self {
-            hash: value.hash.into(),
-            message: value.message.bytecode.into(),
+            hash: hash.into(),
+            message: message.bytecode.into(),
         }
     }
 }
@@ -378,7 +405,7 @@ impl From<Transaction> for FfiTransaction {
                     private_body: Box::into_raw(Box::new(priv_tx.into())),
                     program_deployment_body: std::ptr::null_mut(),
                 },
-                kind: FfiTransactionKind::Public,
+                kind: FfiTransactionKind::Private,
             },
             Transaction::ProgramDeployment(pr_dep_tx) => Self {
                 body: FfiTransactionBody {
@@ -386,7 +413,7 @@ impl From<Transaction> for FfiTransaction {
                     private_body: std::ptr::null_mut(),
                     program_deployment_body: Box::into_raw(Box::new(pr_dep_tx.into())),
                 },
-                kind: FfiTransactionKind::Public,
+                kind: FfiTransactionKind::ProgramDeploy,
             },
         }
     }
