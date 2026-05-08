@@ -317,6 +317,59 @@ impl WalletCore {
         self.storage.user_data.sealing_secret_key = Some(key);
     }
 
+    /// Resolve an `AccountId` to the appropriate `PrivacyPreservingAccount` variant.
+    /// Checks the key tree first, then shared private accounts.
+    #[must_use]
+    pub fn resolve_private_account(
+        &self,
+        account_id: nssa::AccountId,
+    ) -> Option<PrivacyPreservingAccount> {
+        // Check key tree first
+        if self
+            .storage
+            .user_data
+            .get_private_account(account_id)
+            .is_some()
+        {
+            return Some(PrivacyPreservingAccount::PrivateOwned(account_id));
+        }
+
+        // Check shared private accounts
+        let entry = self.storage.user_data.shared_private_account(&account_id)?;
+        let holder = self
+            .storage
+            .user_data
+            .group_key_holder(&entry.group_label)?;
+
+        if let Some(pda_seed) = &entry.pda_seed {
+            let program_id = entry.pda_program_id?;
+            let keys = holder.derive_keys_for_pda(&program_id, pda_seed);
+            Some(PrivacyPreservingAccount::PrivatePda {
+                nsk: keys.nullifier_secret_key,
+                npk: keys.generate_nullifier_public_key(),
+                vpk: keys.generate_viewing_public_key(),
+                program_id,
+                seed: *pda_seed,
+            })
+        } else {
+            let derivation_seed = {
+                use sha2::Digest as _;
+                let mut hasher = sha2::Sha256::new();
+                hasher.update(b"/LEE/v0.3/SharedAccountTag/\x00\x00\x00\x00\x00");
+                hasher.update(entry.identifier.to_le_bytes());
+                let result: [u8; 32] = hasher.finalize().into();
+                result
+            };
+            let keys = holder.derive_keys_for_shared_account(&derivation_seed);
+            Some(PrivacyPreservingAccount::PrivateShared {
+                nsk: keys.nullifier_secret_key,
+                npk: keys.generate_nullifier_public_key(),
+                vpk: keys.generate_viewing_public_key(),
+                identifier: entry.identifier,
+            })
+        }
+    }
+
     /// Remove a group key holder from storage. Returns the removed holder if it existed.
     pub fn remove_group_key_holder(
         &mut self,
