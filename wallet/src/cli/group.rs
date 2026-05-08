@@ -149,7 +149,7 @@ impl WalletSubcommand for GroupSubcommand {
                     .context(format!("Group '{name}' not found"))?;
 
                 let key_bytes = hex::decode(&key).context("Invalid key hex")?;
-                let recipient_key =
+                let recipient_key: key_protocol::key_management::group_key_holder::SealingPublicKey =
                     nssa_core::encryption::shared_key_derivation::Secp256k1Point(key_bytes);
 
                 let sealed = holder.seal_for(&recipient_key);

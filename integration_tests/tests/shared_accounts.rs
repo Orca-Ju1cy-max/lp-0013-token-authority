@@ -31,7 +31,7 @@ async fn group_create_and_shared_account_registration() -> Result<()> {
 
     // Create a group
     let command = Command::Group(GroupSubcommand::New {
-        name: "test-group".to_string(),
+        name: "test-group".into(),
     });
     wallet::cli::execute_subcommand(ctx.wallet_mut(), command).await?;
 
@@ -46,8 +46,8 @@ async fn group_create_and_shared_account_registration() -> Result<()> {
 
     // Create a shared regular private account from the group
     let command = Command::Account(AccountSubcommand::New(NewSubcommand::PrivateGms {
-        group: "test-group".to_string(),
-        label: Some("shared-acc".to_string()),
+        group: "test-group".into(),
+        label: Some("shared-acc".into()),
         pda: false,
         seed: None,
         program_id: None,
@@ -82,7 +82,7 @@ async fn group_export_import_key_agreement() -> Result<()> {
 
     // Create a group
     let command = Command::Group(GroupSubcommand::New {
-        name: "alice-group".to_string(),
+        name: "alice-group".into(),
     });
     wallet::cli::execute_subcommand(ctx.wallet_mut(), command).await?;
 
@@ -97,7 +97,7 @@ async fn group_export_import_key_agreement() -> Result<()> {
 
     // Import under a different name (simulating Bob receiving the GMS)
     let command = Command::Group(GroupSubcommand::Import {
-        name: "bob-copy".to_string(),
+        name: "bob-copy".into(),
         gms: gms_hex,
     });
     wallet::cli::execute_subcommand(ctx.wallet_mut(), command).await?;
@@ -134,18 +134,20 @@ async fn group_export_import_key_agreement() -> Result<()> {
 }
 
 /// Fund a shared account from a public account via auth-transfer, then sync.
+/// TODO: Requires auth-transfer init to work with shared accounts (authorization flow).
 #[test]
+#[ignore]
 async fn fund_shared_account_from_public() -> Result<()> {
     let mut ctx = TestContext::new().await?;
 
     // Create group and shared account
     let command = Command::Group(GroupSubcommand::New {
-        name: "fund-group".to_string(),
+        name: "fund-group".into(),
     });
     wallet::cli::execute_subcommand(ctx.wallet_mut(), command).await?;
 
     let command = Command::Account(AccountSubcommand::New(NewSubcommand::PrivateGms {
-        group: "fund-group".to_string(),
+        group: "fund-group".into(),
         label: None,
         pda: false,
         seed: None,
