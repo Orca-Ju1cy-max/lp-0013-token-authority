@@ -19,7 +19,11 @@ pub enum Instruction {
     /// Required accounts:
     /// - Token Definition account (uninitialized, authorized),
     /// - Token Holding account (uninitialized, authorized).
-    NewFungibleDefinition { name: String, total_supply: u128 },
+    NewFungibleDefinition {
+        name: String,
+        total_supply: u128,
+        mint_authority: Option<AccountId>,
+    },
 
     /// Create a new fungible or non-fungible token definition with metadata.
     ///
@@ -54,6 +58,14 @@ pub enum Instruction {
     /// - Token Holding account (uninitialized or authorized and initialized).
     Mint { amount_to_mint: u128 },
 
+    /// Set mint authority for fungible token definitions.
+    ///
+    /// Required accounts:
+    /// - Token Definition account (initialized, authorized).
+    SetAuthority {
+        new_authority: Option<AccountId>,
+    },
+
     /// Print a new NFT from the master copy.
     ///
     /// Required accounts:
@@ -79,6 +91,7 @@ pub enum TokenDefinition {
     Fungible {
         name: String,
         total_supply: u128,
+        mint_authority: Option<AccountId>,
         metadata_id: Option<AccountId>,
     },
     NonFungible {

@@ -31,7 +31,11 @@ fn main() {
                 .expect("Transfer instruction requires exactly two accounts");
             token_program::transfer::transfer(sender, recipient, balance_to_move)
         }
-        Instruction::NewFungibleDefinition { name, total_supply } => {
+        Instruction::NewFungibleDefinition {
+            name,
+            total_supply,
+            mint_authority,
+        } => {
             let [definition_account, holding_account] = pre_states
                 .try_into()
                 .expect("NewFungibleDefinition instruction requires exactly two accounts");
@@ -40,6 +44,7 @@ fn main() {
                 holding_account,
                 name,
                 total_supply,
+                mint_authority,
             )
         }
         Instruction::NewDefinitionWithMetadata {
@@ -74,6 +79,12 @@ fn main() {
                 .try_into()
                 .expect("Mint instruction requires exactly two accounts");
             token_program::mint::mint(definition_account, user_holding_account, amount_to_mint)
+        }
+        Instruction::SetAuthority { new_authority } => {
+            let [definition_account] = pre_states
+                .try_into()
+                .expect("SetAuthority instruction requires exactly one account");
+            token_program::set_authority::set_authority(definition_account, new_authority)
         }
         Instruction::PrintNft => {
             let [master_account, printed_account] = pre_states

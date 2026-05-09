@@ -34,14 +34,20 @@ pub fn mint(
         (
             TokenDefinition::Fungible {
                 name: _,
-                metadata_id: _,
                 total_supply,
+                mint_authority,
+                metadata_id: _,
             },
             TokenHolding::Fungible {
                 definition_id: _,
                 balance,
             },
         ) => {
+            assert!(
+                mint_authority.is_some(),
+                "Mint authority has been revoked"
+            );
+
             *balance = balance
                 .checked_add(amount_to_mint)
                 .expect("Balance overflow on minting");

@@ -30,8 +30,9 @@ pub fn burn(
         (
             TokenDefinition::Fungible {
                 name: _,
-                metadata_id: _,
                 total_supply,
+                mint_authority: _,
+                metadata_id: _,
             },
             TokenHolding::Fungible {
                 definition_id: _,

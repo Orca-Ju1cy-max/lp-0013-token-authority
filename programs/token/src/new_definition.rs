@@ -1,5 +1,5 @@
 use nssa_core::{
-    account::{Account, AccountWithMetadata, Data},
+    account::{Account, AccountId, AccountWithMetadata, Data},
     program::{AccountPostState, Claim},
 };
 use token_core::{
@@ -12,6 +12,7 @@ pub fn new_fungible_definition(
     holding_target_account: AccountWithMetadata,
     name: String,
     total_supply: u128,
+    mint_authority: Option<AccountId>,
 ) -> Vec<AccountPostState> {
     assert_eq!(
         definition_target_account.account,
@@ -28,6 +29,7 @@ pub fn new_fungible_definition(
     let token_definition = TokenDefinition::Fungible {
         name,
         total_supply,
+        mint_authority,
         metadata_id: None,
     };
     let token_holding = TokenHolding::Fungible {
@@ -78,6 +80,7 @@ pub fn new_definition_with_metadata(
             TokenDefinition::Fungible {
                 name,
                 total_supply,
+                mint_authority: None,
                 metadata_id: Some(metadata_target_account.account_id),
             },
             TokenHolding::Fungible {

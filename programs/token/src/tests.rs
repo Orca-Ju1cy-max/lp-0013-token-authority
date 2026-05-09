@@ -18,6 +18,7 @@ use crate::{
     mint::mint,
     new_definition::{new_definition_with_metadata, new_fungible_definition},
     print_nft::print_nft,
+    set_authority::set_authority,
     transfer::transfer,
 };
 
@@ -38,6 +39,7 @@ impl AccountForTests {
                 data: Data::from(&TokenDefinition::Fungible {
                     name: String::from("test"),
                     total_supply: BalanceForTests::init_supply(),
+                    mint_authority: Some(IdForTests::mint_authority_id()),
                     metadata_id: None,
                 }),
                 nonce: 0_u128.into(),
@@ -55,6 +57,7 @@ impl AccountForTests {
                 data: Data::from(&TokenDefinition::Fungible {
                     name: String::from("test"),
                     total_supply: BalanceForTests::init_supply(),
+                    mint_authority: Some(IdForTests::mint_authority_id()),
                     metadata_id: None,
                 }),
                 nonce: 0_u128.into(),
@@ -136,6 +139,7 @@ impl AccountForTests {
                 data: Data::from(&TokenDefinition::Fungible {
                     name: String::from("test"),
                     total_supply: BalanceForTests::init_supply_burned(),
+                    mint_authority: Some(IdForTests::mint_authority_id()),
                     metadata_id: None,
                 }),
                 nonce: 0_u128.into(),
@@ -209,6 +213,7 @@ impl AccountForTests {
                 data: Data::from(&TokenDefinition::Fungible {
                     name: String::from("test"),
                     total_supply: BalanceForTests::init_supply_mint(),
+                    mint_authority: Some(IdForTests::mint_authority_id()),
                     metadata_id: None,
                 }),
                 nonce: 0_u128.into(),
@@ -283,6 +288,7 @@ impl AccountForTests {
                 data: Data::from(&TokenDefinition::Fungible {
                     name: String::from("test"),
                     total_supply: BalanceForTests::init_supply(),
+                    mint_authority: None,
                     metadata_id: None,
                 }),
                 nonce: 0_u128.into(),
@@ -527,6 +533,14 @@ impl IdForTests {
     fn holding_id_2() -> AccountId {
         AccountId::new([42; 32])
     }
+
+    fn mint_authority_id() -> AccountId {
+        AccountId::new([18; 32])
+    }
+
+    fn rotated_mint_authority_id() -> AccountId {
+        AccountId::new([19; 32])
+    }
 }
 
 #[should_panic(expected = "Definition target account must have default values")]
@@ -550,6 +564,7 @@ fn new_definition_non_default_first_account_should_fail() {
         holding_account,
         String::from("test"),
         10,
+        None,
     );
 }
 
@@ -574,6 +589,7 @@ fn new_definition_non_default_second_account_should_fail() {
         holding_account,
         String::from("test"),
         10,
+        None,
     );
 }
 
@@ -587,6 +603,7 @@ fn new_definition_with_valid_inputs_succeeds() {
         holding_account,
         String::from("test"),
         BalanceForTests::init_supply(),
+        None,
     );
 
     let [definition_account, holding_account] = post_states.try_into().unwrap();
@@ -831,6 +848,70 @@ fn mint_success() {
     assert_eq!(
         *holding_post.account(),
         AccountForTests::holding_account_same_definition_mint().account
+    );
+}
+
+#[test]
+fn mint_with_valid_authority_succeeds() {
+    let definition_account = AccountForTests::definition_account_auth();
+    let holding_account = AccountForTests::holding_same_definition_without_authorization();
+    let post_states = mint(
+        definition_account,
+        holding_account,
+        BalanceForTests::mint_success(),
+    );
+
+    let [def_post, holding_post] = post_states.try_into().unwrap();
+
+    assert_eq!(
+        *def_post.account(),
+        AccountForTests::definition_account_mint().account
+    );
+    assert_eq!(
+        *holding_post.account(),
+        AccountForTests::holding_account_same_definition_mint().account
+    );
+}
+
+#[test]
+#[should_panic(expected = "Mint authority has been revoked")]
+fn mint_with_revoked_authority_panics() {
+    let mut definition_account = AccountForTests::definition_account_auth();
+    definition_account.account.data = Data::from(&TokenDefinition::Fungible {
+        name: String::from("test"),
+        total_supply: BalanceForTests::init_supply(),
+        mint_authority: None,
+        metadata_id: None,
+    });
+
+    let holding_account = AccountForTests::holding_same_definition_without_authorization();
+    let _post_states = mint(
+        definition_account,
+        holding_account,
+        BalanceForTests::mint_success(),
+    );
+}
+
+#[test]
+fn set_authority_rotates_authority_correctly() {
+    let definition_account = AccountForTests::definition_account_auth();
+    let post_states = set_authority(
+        definition_account,
+        Some(IdForTests::rotated_mint_authority_id()),
+    );
+    let [definition_post] = post_states.try_into().unwrap();
+
+    let updated_definition = TokenDefinition::try_from(&definition_post.account().data)
+        .expect("Token Definition account must be valid");
+
+    assert_eq!(
+        updated_definition,
+        TokenDefinition::Fungible {
+            name: String::from("test"),
+            total_supply: BalanceForTests::init_supply(),
+            mint_authority: Some(IdForTests::rotated_mint_authority_id()),
+            metadata_id: None,
+        }
     );
 }
 
